@@ -1,0 +1,84 @@
+# =========================
+# Python basics
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# =========================
+# Environment variables (VERY IMPORTANT)
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Discord / secrets
+# =========================
+config.json
+secrets.json
+
+# =========================
+# yt-dlp / audio downloads
+# =========================
+*.mp3
+*.webm
+*.m4a
+*.opus
+*.wav
+*.part
+*.temp
+
+# yt-dlp generated files (based on your template)
+*-*-*.*
+# (matches extractor-id-title.ext)
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# OS junk
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / Editor files
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# Cache / temp
+# =========================
+.cache/
+tmp/
+temp/
+
+# =========================
+# Build / packaging
+# =========================
+dist/
+build/
+*.egg-info/
+
+# =========================
+# Docker (if you add later)
+# =========================
+*.env.docker
+
+# =========================
+# Misc
+# =========================
+*.sqlite3
+
+# versionry
+bot-alpha.py
+bot-beta.py
