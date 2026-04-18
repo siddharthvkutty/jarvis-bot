@@ -419,6 +419,15 @@ def get_user_stats(guild_id, user_id):
 async def on_message(message):
     if message.author.bot or not message.guild:
         return
+    
+    if random.random() < 0.03:
+        responses = [
+            "I don't trust any of you.",
+            "Something feels off.",
+            "This server has terrible decision-making skills.",
+            "I'm just watching."
+        ]
+        await message.channel.send(random.choice(responses))
 
     stats = get_user_stats(message.guild.id, message.author.id)
     stats["messages"] += 1
@@ -722,6 +731,201 @@ async def pay(ctx, member: discord.Member, amount: int):
 
 
 # ================= MISC COMMANDS ==================
+
+# This command is a fun image editor that adds text to an image at specified positions.
+@bot.hybrid_command(name="imedit", description="Add text to an image")
+async def imedit(
+    ctx,
+    text: str,
+    position: str,
+    image: discord.Attachment
+):
+    await ctx.defer()
+
+    # 🔽 VALID POSITIONS
+    positions = {
+        "topleft": (0, 0),
+        "topcenter": (0.5, 0),
+        "topright": (1, 0),
+        "centerleft": (0, 0.5),
+        "center": (0.5, 0.5),
+        "centerright": (1, 0.5),
+        "bottomleft": (0, 1),
+        "bottomcenter": (0.5, 1),
+        "bottomright": (1, 1),
+    }
+
+    pos_key = position.lower()
+
+    if pos_key not in positions:
+        await ctx.send(
+            "❌ Invalid position.\nUse: topleft, topcenter, topright, centerleft, center, centerright, bottomleft, bottomcenter, bottomright"
+        )
+        return
+
+    # 📥 LOAD IMAGE
+    try:
+        img_bytes = await image.read()
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+    except:
+        await ctx.send("❌ Could not read the image.")
+        return
+
+    draw = ImageDraw.Draw(img)
+    width, height = img.size
+
+    # ================= AUTO TEXT HANDLING =================
+    import textwrap
+
+    max_width = int(width * 0.9)
+
+    # wrap text (prevents insane shrinking)
+    wrapped_text = text
+    max_chars = 25
+    lines = textwrap.wrap(text, width=max_chars)
+    wrapped_text = "\n".join(lines)
+
+    # 🔤 AUTO FONT SIZE
+    font_size = int(width / 8)
+    max_font_size = 120
+    font_size = min(font_size, max_font_size)
+
+    while font_size > 10:
+        try:
+            font = ImageFont.truetype("Roboto-Regular.ttf", font_size)
+        except:
+            font = ImageFont.load_default()
+
+        bbox = draw.multiline_textbbox((0, 0), wrapped_text, font=font)
+        text_width = bbox[2] - bbox[0]
+
+        if text_width <= max_width:
+            break
+
+        font_size -= 2
+
+    # final text size
+    bbox = draw.multiline_textbbox((0, 0), wrapped_text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+
+    # 📍 POSITION
+    rel_x, rel_y = positions[pos_key]
+    x = int((width - text_width) * rel_x)
+    y = int((height - text_height) * rel_y)
+
+    # ✨ OUTLINE (scales with font)
+    outline_thickness = max(2, font_size // 15)
+
+    for dx in range(-outline_thickness, outline_thickness + 1):
+        for dy in range(-outline_thickness, outline_thickness + 1):
+            if dx != 0 or dy != 0:
+                draw.multiline_text(
+                    (x + dx, y + dy),
+                    wrapped_text,
+                    font=font,
+                    fill="black",
+                    align="center"
+                )
+
+    # 🎯 MAIN TEXT
+    draw.multiline_text(
+        (x, y),
+        wrapped_text,
+        font=font,
+        fill="white",
+        align="center"
+    )
+
+    # 📤 SEND
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    await ctx.send(file=discord.File(fp=buffer, filename="edited.png"))
+
+@bot.hybrid_command(name="yuta", description="Put your text in Yuta's speech bubble")
+async def yuta(ctx, *, text: str):
+    await ctx.defer()
+
+    import io
+    from PIL import Image, ImageDraw, ImageFont
+
+    # ===== LOAD TEMPLATE =====
+    image = Image.open("yuta.png").convert("RGBA")
+    draw = ImageDraw.Draw(image)
+
+    # ===== TOP-RIGHT BUBBLE BOX (LIKE /IMEDIT) =====
+    margin_x = int(image.width * 0.05)
+    margin_y = int(image.height * 0.05)
+
+    bubble_w = int(image.width * 0.38)
+    bubble_h = int(image.height * 0.38)
+
+    bubble_x = image.width - bubble_w - margin_x
+    bubble_y = margin_y
+
+    # ===== TEXT WRAP FUNCTION =====
+    def wrap_text(text, font, max_width):
+        lines = []
+        words = text.split()
+        current = ""
+
+        for word in words:
+            test = current + word + " "
+            if draw.textlength(test, font=font) <= max_width:
+                current = test
+            else:
+                lines.append(current)
+                current = word + " "
+
+        if current:
+            lines.append(current)
+
+        return lines
+
+    # ===== AUTO FONT SCALING =====
+    font_size = 42
+    min_font_size = 18
+
+    while font_size >= min_font_size:
+        font = ImageFont.truetype("Roboto-Regular.ttf", font_size)
+
+        lines = wrap_text(text, font, bubble_w - 20)
+
+        total_height = len(lines) * (font_size + 5)
+
+        if total_height <= bubble_h - 20:
+            break
+
+        font_size -= 2  # shrink until it fits
+
+    # ===== CENTER TEXT INSIDE BUBBLE =====
+    y_offset = bubble_y + (bubble_h - total_height) // 2
+
+    for line in lines:
+        line_width = draw.textlength(line, font=font)
+
+        x = bubble_x + (bubble_w - line_width) // 2 + 50  # 50px padding from bubble edge
+
+        draw.text(
+            (x, y_offset),
+            line.strip(),
+            font=font,
+            fill="black"
+        )
+
+        y_offset += font_size + 5
+
+    # ===== SEND =====
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    file = discord.File(fp=buffer, filename="yuta.png")
+    await ctx.send(file=file)
+
+
 @bot.hybrid_command(name="invite", description="Invite someone to the island")
 async def invite(ctx, member: discord.Member):
     import io
@@ -800,42 +1004,236 @@ async def coinflip(ctx):
 async def gamble(ctx, amount: int):
     stats = get_user_stats(ctx.guild.id, ctx.author.id)
 
-    # ❌ invalid input
     if amount <= 0:
         await ctx.send("❌ Enter a valid amount.")
         return
 
-    # ❌ not enough money
     if stats["coins"] < amount:
         await ctx.send("❌ You don't have enough coins.")
         return
 
     await ctx.send("🎰 Rolling...")
-
     await asyncio.sleep(1.2)
 
-    # 🎲 weighted outcomes (more fun than 50/50)
     roll = random.random()
 
+    # ================= RESULTS =================
     if roll < 0.45:
         stats["coins"] += amount
-        result = f"🎉 You WON {amount} coins!"
+        result = f"You WON {amount} coins!"
+        outcome = "win"
+
     elif roll < 0.75:
         loss = int(amount * 0.5)
         stats["coins"] -= loss
-        result = f"😬 You lost {loss} coins..."
+        result = f"You lost {loss} coins..."
+        outcome = "loss"
+
     elif roll > 0.98:
         win = amount * 5
         stats["coins"] += win
+        result = f"JACKPOT! You won {win} coins!"
+        outcome = "win"
 
     else:
         stats["coins"] -= amount
-        result = f"💀 You LOST everything ({amount})!"
+        result = f"You LOST everything ({amount})!"
+        outcome = "loss"
 
     save_stats(user_stats)
 
+    # ================= CHAOS =================
+    chaos_line = ""
+
+    if random.random() < 0.15:
+        if outcome == "win":
+            chaos_line = "\nGAMBLE AGAIN YOU CAN WIN IT BACK"
+        else:
+            chaos_line = "\n's'okay man keep gambling, statistically youre gonna win atleast once"
+
+    # ✅ ALWAYS SEND (outside the if)
     await ctx.send(
-        f"{result}\n💰 New Balance: {stats['coins']}"
+        f"{result}{chaos_line}\nNew Balance: {stats['coins']}"
+    )
+
+# This command generates a custom profile card image showing the user's stats and rank in the server.
+@bot.hybrid_command(name="profile", description="View your profile")
+async def profile(ctx, member: discord.Member = None):
+    await ctx.defer()
+
+    if member is None:
+        member = ctx.author
+
+    stats = get_user_stats(ctx.guild.id, member.id)
+
+    import aiohttp
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
+    import io
+
+    # ================= BASE =================
+    width, height = 900, 360  # 🔥 increased height
+    img = Image.new("RGBA", (width, height))
+    draw = ImageDraw.Draw(img)
+
+    # 🌈 Gradient background (kept)
+    for y in range(height):
+        r = int(30 + (y / height) * 40)
+        g = int(30 + (y / height) * 20)
+        b = int(50 + (y / height) * 60)
+        draw.line([(0, y), (width, y)], fill=(r, g, b))
+
+    # ================= FONTS =================
+    font_big = ImageFont.truetype("Roboto-Regular.ttf", 48)
+    font_mid = ImageFont.truetype("Roboto-Regular.ttf", 26)
+    font_small = ImageFont.truetype("Roboto-Regular.ttf", 22)
+
+    # ================= AVATAR =================
+    async with aiohttp.ClientSession() as session:
+        async with session.get(member.display_avatar.url) as resp:
+            avatar_bytes = await resp.read()
+
+    avatar = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
+
+    avatar_size = 170
+    avatar = avatar.resize((avatar_size, avatar_size))
+
+    # Circle mask
+    mask = Image.new("L", (avatar_size, avatar_size), 0)
+    mask_draw = ImageDraw.Draw(mask)
+    mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
+    avatar.putalpha(mask)
+
+    # Glow
+    glow_size = avatar_size + 20
+    glow = Image.new("RGBA", (glow_size, glow_size), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow)
+    glow_draw.ellipse((0, 0, glow_size, glow_size), fill=(120, 80, 255, 120))
+    glow = glow.filter(ImageFilter.GaussianBlur(15))
+
+    img.paste(glow, (60 - 10, 75 - 10), glow)
+    img.paste(avatar, (60, 75), avatar)
+
+    # ================= NAME =================
+    draw.text((260, 70), member.display_name, font=font_big, fill="white")
+
+    # ================= RANK =================
+    guild_data = user_stats.get(str(ctx.guild.id), {})
+
+    sorted_users = sorted(
+        guild_data.items(),
+        key=lambda x: x[1]["messages"],
+        reverse=True
+    )
+
+    rank = next((i for i, (uid, _) in enumerate(sorted_users, 1) if uid == str(member.id)), "?")
+
+    draw.text((260, 130), f"Rank #{rank}", font=font_mid, fill=(255, 215, 0))
+
+    # ================= STATS =================
+    draw.text((260, 180), f"Coins: {stats['coins']}", font=font_small, fill="white")
+    draw.text((260, 210), f"Messages: {stats['messages']}", font=font_small, fill="white")
+    draw.text((260, 240), f"Commands: {stats['commands']}", font=font_small, fill="white")
+
+    # ================= PROGRESS BAR =================
+    level = stats["messages"] // 100
+    progress = stats["messages"] % 100
+
+    bar_x, bar_y = 260, 300   # 🔥 moved down
+    bar_width, bar_height = 500, 22
+
+    def draw_rounded_bar(draw, x, y, w, h, radius, fill):
+        draw.rounded_rectangle((x, y, x + w, y + h), radius=radius, fill=fill)
+
+    # Background bar
+    draw_rounded_bar(draw, bar_x, bar_y, bar_width, bar_height, 12, (60, 60, 80))
+
+    # Progress fill
+    fill_width = int((progress / 100) * bar_width)
+    draw_rounded_bar(draw, bar_x, bar_y, fill_width, bar_height, 12, (120, 80, 255))
+
+    # Level text (moved up cleanly)
+    draw.text(
+        (bar_x, bar_y - 35),
+        f"Level {level} ({progress}/100)",
+        font=font_small,
+        fill="white"
+    )
+
+    # ================= SAVE =================
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    file = discord.File(fp=buffer, filename="profile.png")
+    await ctx.send(file=file)
+
+# This command shows overall server stats and highlights the top chatter.
+@bot.hybrid_command(name="serverstats", description="Show server statistics")
+async def serverstats(ctx):
+    guild_data = user_stats.get(str(ctx.guild.id), {})
+
+    if not guild_data:
+        await ctx.send("📊 No data for this server yet.")
+        return
+
+    total_messages = sum(user["messages"] for user in guild_data.values())
+    total_commands = sum(user["commands"] for user in guild_data.values())
+    total_coins = sum(user["coins"] for user in guild_data.values())
+
+    # 🏆 Top user
+    top_user_id, top_data = max(
+        guild_data.items(),
+        key=lambda x: x[1]["messages"]
+    )
+
+    top_user = await bot.fetch_user(int(top_user_id))
+
+    embed = discord.Embed(
+        title=f"📊 Server Stats - {ctx.guild.name}",
+        color=0x00ffcc
+    )
+
+    embed.add_field(name="💬 Total Messages", value=total_messages)
+    embed.add_field(name="⚙️ Total Commands", value=total_commands)
+    embed.add_field(name="💰 Total Coins", value=total_coins)
+
+    embed.add_field(
+        name="🏆 Top User",
+        value=f"{top_user.name} ({top_data['messages']} msgs) | ({top_data['coins']} coins)",
+        inline=False
+    )
+
+    await ctx.send(embed=embed)
+
+# This command simulates a magic 8ball response with a fun API and adds flavor based on the mood of the answer.
+@bot.hybrid_command(name="8ball", description="Ask the magic 8ball a question")
+async def eightball(ctx, *, question: str):
+    await ctx.defer()
+
+    url = "https://eightballapi.com/api?locale=en"
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                data = await resp.json()
+    except Exception:
+        await ctx.send("❌ The 8ball is currently asleep. Try again later.")
+        return
+
+    answer = data.get("reading", "No answer...")
+    # mood = data.get("category", "neutral")  # ✅ FIXED
+
+    # if mood == "positive":
+    #     emoji = "🟢"
+    # elif mood == "negative":
+    #     emoji = "🔴"
+    # else:
+    #     emoji = "🟡"
+
+    await ctx.send(
+        f"🎱 **Question:** {question}\n"
+        #f"{emoji} **Answer:** {answer}"
+        f"**Answer:** {answer}"
     )
 
 # ==================== ON READY ====================
