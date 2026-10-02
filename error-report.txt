@@ -1,0 +1,28 @@
+jarvis#2837 is online and ready!
+Synced 17 slash command(s)
+[generic] Extracting URL: fendi 2
+[youtube:search] Extracting URL: ytsearch:fendi 2
+[download] Downloading playlist: fendi 2
+[youtube:search] query "fendi 2": Downloading web client config
+[youtube:search] query "fendi 2" page 1: Downloading API JSON
+[youtube:search] Playlist fendi 2: Downloading 1 items of 1
+[download] Downloading item 1 of 1
+[youtube] Extracting URL: https://www.youtube.com/watch?v=sjmcXTn7rqI
+[youtube] sjmcXTn7rqI: Downloading webpage
+[youtube] sjmcXTn7rqI: Downloading visionos player API JSON
+[youtube] sjmcXTn7rqI: Downloading m3u8 information
+[info] sjmcXTn7rqI: Downloading 1 format(s): 140
+[download] Destination: youtube-sjmcXTn7rqI-Fendi_2.m4a
+[download] 100% of    1.40MiB in 00:00:00 at 5.05MiB/s
+[FixupM4a] Correcting container of "youtube-sjmcXTn7rqI-Fendi_2.m4a"
+[download] Finished downloading playlist: fendi 2
+2026-09-29 16:47:46 INFO     discord.voice_state Connecting to voice...
+2026-09-29 16:47:46 INFO     discord.voice_state Starting voice handshake... (connection attempt 1)
+Option reconnect not found.
+Error opening input file youtube-sjmcXTn7rqI-Fendi_2.m4a.
+Error opening input files: Option not found
+2026-09-29 16:47:47 INFO     discord.voice_state Voice handshake complete. Endpoint found: c-bom10-94c5b941.discord.media:443
+2026-09-29 16:47:47 INFO     discord.voice_state Voice connection complete.
+[INFO] Song finished normally
+2026-09-29 16:47:47 INFO     discord.player ffmpeg process 31686 successfully terminated with return code of 8.
+2026-09-29 16:48:08 INFO     discord.voice_state The voice handshake is being terminated for Channel ID 1444326583866491074 (Guild ID 1444326583136424039)

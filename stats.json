@@ -1,9 +1,9 @@
 {
     "1444326583136424039": {
         "624410250585571349": {
-            "messages": 177,
-            "commands": 190,
-            "coins": 517
+            "messages": 346,
+            "commands": 233,
+            "coins": 527
         },
         "1053951459240198174": {
             "messages": 3,
@@ -11,34 +11,34 @@
             "coins": 2
         },
         "697521922426011779": {
-            "messages": 33,
-            "commands": 21,
+            "messages": 108,
+            "commands": 25,
             "coins": 40,
             "inventory": {},
             "cards": {}
         },
         "535688818834014220": {
-            "messages": 48,
+            "messages": 86,
             "commands": 16,
-            "coins": 27
+            "coins": 35
         },
         "1464302654032187442": {
-            "messages": 30,
+            "messages": 73,
             "commands": 15,
             "coins": 18
         },
         "1115941926798118953": {
-            "messages": 49,
+            "messages": 93,
             "commands": 19,
             "coins": 15
         },
         "762596813173555221": {
-            "messages": 6,
+            "messages": 13,
             "commands": 0,
             "coins": 6
         },
         "778167554769944586": {
-            "messages": 8,
+            "messages": 9,
             "commands": 0,
             "coins": 8
         },
@@ -46,6 +46,10 @@
             "messages": 1,
             "commands": 1,
             "coins": 1
+        },
+        "857252030011801670": {
+            "messages": 18,
+            "commands": 0
         }
     },
     "778970053055479828": {
